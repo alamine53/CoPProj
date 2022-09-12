@@ -1,0 +1,4 @@
+data/
+projections/
+venv/
+__pycache__
