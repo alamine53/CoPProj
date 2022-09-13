@@ -25,7 +25,7 @@ def drop_nas(y, X, verbose=True):
         print(X.shape)
     return y_no_nas, X_no_nas
 
-class A:
+class VORP_L3:
 
     def create_xy(start, end, metric, no_nas=True, show_plots=False):
         """ 3 lags of X """
@@ -35,7 +35,7 @@ class A:
 
             df = grab_stats(season)
             active_players = list(df.index.values)
-            y = df[metric].tolist()
+            y = df[metric].astype(float).tolist()
             Y.extend(y)
             if show_plots:
                 plt_dist(y, "{} distribution in {}".format(metric, season))
@@ -57,7 +57,7 @@ class A:
             return np.array(Y), np.array(X)
 
 
-class B:
+class VORP_L2:
 
     def create_xy(start, end, metric, no_nas=True, show_plots=False):
         """ 3 lags of X """
@@ -67,7 +67,7 @@ class B:
 
             df = grab_stats(season)
             active_players = list(df.index.values)
-            y = df[metric].tolist()
+            y = df[metric].astype(float).tolist()
             Y.extend(y)
             if show_plots:
                 plt_dist(y, "{} distribution in {}".format(metric, season))
@@ -78,6 +78,99 @@ class B:
             for i in active_players:
                 try:
                     year_x.append([df_l1[metric][i], df_l2[metric][i]])
+                except KeyError:
+                    year_x.append([np.nan, np.nan])
+
+            X.extend(year_x)
+
+        if no_nas:
+            return drop_nas(np.array(Y), np.array(X), verbose=False)
+        else:
+            return np.array(Y), np.array(X)
+
+class VORP_L1:
+
+    def create_xy(start, end, metric, no_nas=True, show_plots=False):
+        """ 3 lags of X """
+        Y = []
+        X = []
+        for season in range(start, end):
+
+            df = grab_stats(season)
+            active_players = list(df.index.values)
+            y = df[metric].astype(float).tolist()
+            Y.extend(y)
+            if show_plots:
+                plt_dist(y, "{} distribution in {}".format(metric, season))
+
+            df_l1 = grab_stats(season-1)
+            df_l2 = grab_stats(season-2)
+            year_x = []
+            for i in active_players:
+                try:
+                    year_x.append([df_l1[metric][i]])
+                except KeyError:
+                    year_x.append([np.nan])
+
+            X.extend(year_x)
+
+        if no_nas:
+            return drop_nas(np.array(Y), np.array(X), verbose=False)
+        else:
+            return np.array(Y), np.array(X)
+
+class BPM_L2:
+
+    def create_xy(start, end, metric, no_nas=True, show_plots=False):
+        """ 3 lags of X """
+        Y = []
+        X = []
+        for season in range(start, end):
+
+            df = grab_stats(season)
+            active_players = list(df.index.values)
+            y = df[metric].astype(float).tolist()
+            Y.extend(y)
+            if show_plots:
+                plt_dist(y, "{} distribution in {}".format(metric, season))
+
+            df_l1 = grab_stats(season-1)
+            df_l2 = grab_stats(season-2)
+            year_x = []
+            for i in active_players:
+                try:
+                    year_x.append([df_l1[metric][i], df_l2[metric][i], df_l1['MP'][i], df_l2['MP'][i]])
+                except KeyError:
+                    year_x.append([np.nan, np.nan, np.nan, np.nan])
+
+            X.extend(year_x)
+
+        if no_nas:
+            return drop_nas(np.array(Y), np.array(X), verbose=False)
+        else:
+            return np.array(Y), np.array(X)
+
+class BPM_L1:
+
+    def create_xy(start, end, metric, no_nas=True, show_plots=False):
+        """ 3 lags of X """
+        Y = []
+        X = []
+        for season in range(start, end):
+
+            df = grab_stats(season)
+            active_players = list(df.index.values)
+            y = df[metric].astype(float).tolist()
+            Y.extend(y)
+            if show_plots:
+                plt_dist(y, "{} distribution in {}".format(metric, season))
+
+            df_l1 = grab_stats(season-1)
+            df_l2 = grab_stats(season-2)
+            year_x = []
+            for i in active_players:
+                try:
+                    year_x.append([df_l1[metric][i], df_l1['MP'][i]])
                 except KeyError:
                     year_x.append([np.nan, np.nan])
 

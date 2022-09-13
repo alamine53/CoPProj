@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import mean_squared_error 
 
 from utils import grab_stats, drop_nas, create_xy
-from models import A, B
+from models import VORP_L1, VORP_L2, VORP_L3, BPM_L1, BPM_L2
 # from models import create_xy
 
 def load_data(start, end):
@@ -22,7 +22,7 @@ def plt_dist(data, ctitle, ax=None):
 y1  = 1990
 metric = 'BPM'
 
-for model in [A, B]:
+for model in [VORP_L1, VORP_L2, VORP_L3, BPM_L1, BPM_L2]:
     rmse_list = []
     print("Model", model)
     for y2 in range(2010, 2023):

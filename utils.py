@@ -44,7 +44,7 @@ def grab_stats(season: int, slugs: bool=True, from_bbref: bool=False,one_obs_per
 
             df = df.join(df_slugs)
             df.to_csv(filepath, index=True)
-            print("Data for {} has been stored to disk".format(season))
+            print("Player stats for {} have been saved to disk.".format(season))
     
     df.set_index('playerID', inplace=True)
     if one_obs_per_player:
