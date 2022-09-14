@@ -7,7 +7,7 @@ from utils import grab_stats
 
 # divide players into tiers (Pros > 3 years, Rookies = 1 year)
 
-def drop_nas(y, X, verbose=True):
+def drop_nas(y, X, verbose=False):
     if verbose:
         print("Before dropping NAs: \n===================")
         print(y.shape)
@@ -27,7 +27,10 @@ def drop_nas(y, X, verbose=True):
 
 class VORP_L3:
 
-    def create_xy(start, end, metric, no_nas=True, show_plots=False):
+    def __repr__(self):
+        return "VORP Lag 3"
+
+    def create_xy(start, end, metric='VORP', no_nas=True, show_plots=False):
         """ 3 lags of X """
         Y = []
         X = []
@@ -59,7 +62,10 @@ class VORP_L3:
 
 class VORP_L2:
 
-    def create_xy(start, end, metric, no_nas=True, show_plots=False):
+    def __repr__(self):
+        return "VORP Lag 2"
+
+    def create_xy(start, end, metric='VORP', no_nas=True, show_plots=False):
         """ 3 lags of X """
         Y = []
         X = []
@@ -90,7 +96,10 @@ class VORP_L2:
 
 class VORP_L1:
 
-    def create_xy(start, end, metric, no_nas=True, show_plots=False):
+    def __repr__(self):
+        return "VORP Lag 1"
+
+    def create_xy(start, end, metric='VORP', no_nas=True, show_plots=False):
         """ 3 lags of X """
         Y = []
         X = []
@@ -121,7 +130,10 @@ class VORP_L1:
 
 class BPM_L2:
 
-    def create_xy(start, end, metric, no_nas=True, show_plots=False):
+    def __repr__(self):
+        return "BPM Lag 2 + MP Lag 2"
+
+    def create_xy(start, end, metric='BPM', no_nas=True, show_plots=False):
         """ 3 lags of X """
         Y = []
         X = []
@@ -152,7 +164,10 @@ class BPM_L2:
 
 class BPM_L1:
 
-    def create_xy(start, end, metric, no_nas=True, show_plots=False):
+    def __repr__(self):
+        return "BPM Lag 1 + MP Lag 1"
+
+    def create_xy(start, end, metric='BPM', no_nas=True, show_plots=False):
         """ 3 lags of X """
         Y = []
         X = []
@@ -180,3 +195,22 @@ class BPM_L1:
             return drop_nas(np.array(Y), np.array(X), verbose=False)
         else:
             return np.array(Y), np.array(X)
+
+class Naive:
+    """ Yhat at year t = Y at year t-1 """
+
+    def forecast(season, metric):
+
+        df = grab_stats(season)
+        active_players = list(df.index.values)
+        y = df[metric].astype(float).tolist()
+    
+        df_l1 = grab_stats(season-1)
+        y_hat = []
+        for i in active_players:
+                try:
+                    y_hat.append(df_l1[metric][i])
+                except KeyError:
+                    y_hat.append(np.nan)
+
+        return drop_nas(y, y_hat)

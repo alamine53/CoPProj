@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import mean_squared_error 
 
 from utils import grab_stats, drop_nas, create_xy
-from models import VORP_L1, VORP_L2, VORP_L3, BPM_L1, BPM_L2
+from models import VORP_L1, VORP_L2, VORP_L3, BPM_L1, BPM_L2, Naive
 # from models import create_xy
 
 def load_data(start, end):
@@ -24,7 +24,6 @@ metric = 'BPM'
 
 for model in [VORP_L1, VORP_L2, VORP_L3, BPM_L1, BPM_L2]:
     rmse_list = []
-    print("Model", model)
     for y2 in range(2010, 2023):
 
         y, X = model.create_xy(y1, y2, metric, no_nas=True)
@@ -43,9 +42,23 @@ for model in [VORP_L1, VORP_L2, VORP_L3, BPM_L1, BPM_L2]:
 
         rmse = mean_squared_error(y_val, y_pred)
         # print("Preds:", reg.predict(X_val))
-        print("%2d RMSE: %5.2f" % (y2, rmse))
+        # print("%2d RMSE: %5.2f" % (y2, rmse))
         rmse_list.append(rmse)
 
-    print("Average RMSE: %5.2f" % (sum(rmse_list)/len(rmse_list)))
+    print("Average RMSE ({}): {}".format(repr(model()), round(sum(rmse_list)/len(rmse_list),2)))
+
+# Naive forecast
+
+for m in ['BPM', 'VORP']:
+    rmse_naive = []
+    for season in range(2010, 2023):
+
+        y_val, y_pred = Naive.forecast(season, m)
+        rmse = mean_squared_error(y_val, y_pred)
+        # print("%2d RMSE: %5.2f" % (season, rmse))
+        rmse_naive.append(rmse)
+
+    print("Average RMSE (Naive {}): {}".format(m, round(sum(rmse_naive)/len(rmse_naive),2)))
+
 # scores = cross_val_score(reg, X, y, cv=5)
 # print(scores)
