@@ -196,6 +196,27 @@ class BPM_L1:
         else:
             return np.array(Y), np.array(X)
 
+class TIME_WA3:
+
+    def forecast(season, metric="MP"):
+
+        df = grab_stats(season)
+        active_players = list(df.index.values)
+        y = df[metric].astype(float).tolist()
+    
+        df_l1 = grab_stats(season-1)
+        df_l2 = grab_stats(season-2)
+        yhat = []
+        for i in active_players:
+                try:
+                    most_time = max([df_l1[metric][i], df_l2[metric][i]])
+                    least_time = min([df_l1[metric][i], df_l2[metric][i]])
+                    yhat.append((2*most_time + least_time)/3)
+                except KeyError:
+                    yhat.append(np.nan)
+
+        return drop_nas(y, yhat)
+
 class Naive:
     """ Yhat at year t = Y at year t-1 """
 
