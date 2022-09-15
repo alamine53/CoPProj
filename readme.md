@@ -1,6 +1,6 @@
 # NBA Player Projections
 
-Models trained to forecast indivdidual stats (e.g. MP, VORP, BPM, PER...) ahead of a season
+Forecasting models for advanced stats (e.g. VORP, BPM, PER...)
 
 ```
 python main.py [season] [stat]
