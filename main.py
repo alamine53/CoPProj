@@ -5,13 +5,13 @@ from sklearn import linear_model
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import mean_squared_error 
 
-from utils import grab_stats, drop_nas, create_xy
+from bbref import advanced_stats
 from models import VORP_L1, VORP_L2, VORP_L3, BPM_L1, BPM_L2, Naive, TIME_WA3
 # from models import create_xy
 
 def load_data(start, end):
     for season in range(start, end):
-        df = grab_stats(season, from_bbref=True)
+        df = advanced_stats(season, from_bbref=True)
         print(df)
 
 def plt_dist(data, ctitle, ax=None):

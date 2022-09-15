@@ -1,9 +1,5 @@
 import numpy as np
-from utils import grab_stats
-# xgboost: 3 lags 
-# xgboost: 2 lags and age
-# naive model 1: value at t equal to value at t-1 (or t - 2 if t-1 doesn't exist)
-# naive model 2: weighted moving average of last 3 years
+from bbref import advanced_stats
 
 # divide players into tiers (Pros > 3 years, Rookies = 1 year)
 
@@ -36,16 +32,16 @@ class VORP_L3:
         X = []
         for season in range(start, end):
 
-            df = grab_stats(season)
+            df = advanced_stats(season)
             active_players = list(df.index.values)
             y = df[metric].astype(float).tolist()
             Y.extend(y)
             if show_plots:
                 plt_dist(y, "{} distribution in {}".format(metric, season))
 
-            df_l1 = grab_stats(season-1)
-            df_l2 = grab_stats(season-2)
-            df_l3 = grab_stats(season-3)
+            df_l1 = advanced_stats(season-1)
+            df_l2 = advanced_stats(season-2)
+            df_l3 = advanced_stats(season-3)
             year_x = []
             for i in active_players:
                 try:
@@ -71,15 +67,15 @@ class VORP_L2:
         X = []
         for season in range(start, end):
 
-            df = grab_stats(season)
+            df = advanced_stats(season)
             active_players = list(df.index.values)
             y = df[metric].astype(float).tolist()
             Y.extend(y)
             if show_plots:
                 plt_dist(y, "{} distribution in {}".format(metric, season))
 
-            df_l1 = grab_stats(season-1)
-            df_l2 = grab_stats(season-2)
+            df_l1 = advanced_stats(season-1)
+            df_l2 = advanced_stats(season-2)
             year_x = []
             for i in active_players:
                 try:
@@ -105,15 +101,15 @@ class VORP_L1:
         X = []
         for season in range(start, end):
 
-            df = grab_stats(season)
+            df = advanced_stats(season)
             active_players = list(df.index.values)
             y = df[metric].astype(float).tolist()
             Y.extend(y)
             if show_plots:
                 plt_dist(y, "{} distribution in {}".format(metric, season))
 
-            df_l1 = grab_stats(season-1)
-            df_l2 = grab_stats(season-2)
+            df_l1 = advanced_stats(season-1)
+            df_l2 = advanced_stats(season-2)
             year_x = []
             for i in active_players:
                 try:
@@ -139,15 +135,15 @@ class BPM_L2:
         X = []
         for season in range(start, end):
 
-            df = grab_stats(season)
+            df = advanced_stats(season)
             active_players = list(df.index.values)
             y = df[metric].astype(float).tolist()
             Y.extend(y)
             if show_plots:
                 plt_dist(y, "{} distribution in {}".format(metric, season))
 
-            df_l1 = grab_stats(season-1)
-            df_l2 = grab_stats(season-2)
+            df_l1 = advanced_stats(season-1)
+            df_l2 = advanced_stats(season-2)
             year_x = []
             for i in active_players:
                 try:
@@ -173,15 +169,15 @@ class BPM_L1:
         X = []
         for season in range(start, end):
 
-            df = grab_stats(season)
+            df = advanced_stats(season)
             active_players = list(df.index.values)
             y = df[metric].astype(float).tolist()
             Y.extend(y)
             if show_plots:
                 plt_dist(y, "{} distribution in {}".format(metric, season))
 
-            df_l1 = grab_stats(season-1)
-            df_l2 = grab_stats(season-2)
+            df_l1 = advanced_stats(season-1)
+            df_l2 = advanced_stats(season-2)
             year_x = []
             for i in active_players:
                 try:
@@ -200,12 +196,12 @@ class TIME_WA3:
 
     def forecast(season, metric="MP"):
 
-        df = grab_stats(season)
+        df = advanced_stats(season)
         active_players = list(df.index.values)
         y = df[metric].astype(float).tolist()
     
-        df_l1 = grab_stats(season-1)
-        df_l2 = grab_stats(season-2)
+        df_l1 = advanced_stats(season-1)
+        df_l2 = advanced_stats(season-2)
         yhat = []
         for i in active_players:
                 try:
@@ -222,11 +218,11 @@ class Naive:
 
     def forecast(season, metric):
 
-        df = grab_stats(season)
+        df = advanced_stats(season)
         active_players = list(df.index.values)
         y = df[metric].astype(float).tolist()
     
-        df_l1 = grab_stats(season-1)
+        df_l1 = advanced_stats(season-1)
         y_hat = []
         for i in active_players:
                 try:
