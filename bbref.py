@@ -4,7 +4,7 @@ from requests import get
 from bs4 import BeautifulSoup
 
 
-def advanced_stats(season: int, slugs: bool=True, from_bbref: bool=False,one_obs_per_player:bool=True, verbose: bool=False):
+def advanced_stats(season: int, slugs: bool=True, from_bbref: bool=False, one_obs_per_player:bool=True):
     """
     Returns the BBRef "advanced stats" table corresponding to a given a season 
     where the rows are the players and the columns are the various metrics. 
