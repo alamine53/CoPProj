@@ -1,17 +1,16 @@
 import numpy as np
-from bbref import advanced_stats
-import matplotlib.pyplot as plt
-
 from sklearn import linear_model
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.metrics import mean_squared_error 
 
-def plt_dist(data, ctitle, ax=None):
-    plt.hist(data, bins=30, alpha=0.7, ec="black")
-    plt.title(ctitle)
-    plt.show()
+from bbref import advanced_stats
+from utils import plt_dist
 
 def drop_nas(y, X, verbose=False):
+    """
+    Drop NaN values from two arrays (y, and X) based on the values
+    of X.
+    """
     if verbose:
         print("Before dropping NAs: \n===================")
         print(y.shape)
@@ -29,8 +28,24 @@ def drop_nas(y, X, verbose=False):
         print(X.shape)
     return y_no_nas, X_no_nas
 
-def create_y(season, metric, show_plots):
+def create_y(season: int, metric: str, show_plots: bool = False, relevant_players_only: bool = False):
+    """
+    Create labels and relevant player list for/from a given season.
+    
+    Args:
+        season: season for which we want to train / predict. 
+        metric: list of players which we care about
+        show_plots: Display distribution of y values in a histogram
+        relevant_players_only: Will filter down to the players with more than
+            1,000 minutes played per season
+
+    Returns:
+        y: list of labels
+        active_players: list of active players
+    """
     df = advanced_stats(season)
+    if relevant_players_only:
+        df = df[df['MP'] > 1000]
     active_players = list(df.index.values)
     y = df[metric].astype(float).tolist()
     if show_plots:
@@ -40,9 +55,19 @@ def create_y(season, metric, show_plots):
 
 def create_X(season: int, player_list: list, X_vars: list):
     """
-    Xvarlist = [(metric, lag), (metric, lag), (metric, lag)....]
-    e.g.
-               [('BPM', 1), ('BPM', 2), ('MP', 3), ('Age', 0)]
+    Create a feature vector corresponding to a player list from 
+    a given season. 
+    
+    Args:
+        season: season for which we want to train / predict. 
+        player_list: list of players which we care about
+        X_vars = list of shape: [(metric, lag), (metric, lag), (metric, lag)....]
+                where "metric" is the name of the variable as from the BBref dataset 
+                and lag is the correspong lag year. 
+                e.g. [('BPM', 1), ('BPM', 2), ('MP', 3), ('Age', 0)]
+
+    Returns:
+        X: List of features corresponding to the order of players.
     """
     X = []
     lags = [i[1] for i in X_vars]
@@ -63,16 +88,21 @@ def create_X(season: int, player_list: list, X_vars: list):
     return X
 
 class LinearModel:
-
-    def __init__(self, yvar: str, xvars: list, sample_start: int=1990):
+    """
+    Linear regression model of the form Y = aX + b
+    where X is a feature vector of lags and controls. 
+    """
+    def __init__(self, yvar: str, xvars: list, restrict_sample: bool=False, sample_start: int=1990):
         self.yvar = yvar
         self.xvars = xvars
         self.sample_start = sample_start
+        self.restrict_sample = restrict_sample
 
     def create_xy(self, start, end, no_nas=True):
         y, X = [], []
         for s in range(start, end):
-            sy, plist = create_y(s, self.yvar, show_plots=False)
+            sy, plist = create_y(s, self.yvar, show_plots=False, relevant_players_only=self.restrict_sample)
+
             sX = create_X(s, plist, self.xvars)
             y.extend(sy)
             X.extend(sX)
@@ -100,59 +130,69 @@ class LinearModel:
             rmse.append(mean_squared_error(yval, yhat))
         return rmse
 
-class TIME_WA3:
-
-    def forecast(season, metric="MP"):
-
-        df = advanced_stats(season)
-        active_players = list(df.index.values)
-        y = df[metric].astype(float).tolist()
+class NaiveModel:
+    """
+    Forecasts y at year t as equal to the value of 
+    y at year t minus 1. This model is meant as a baseline
+    for comparison against more advanced models. 
+    """
+    def __init__(self, yvar, restrict_sample=False):
+        self.yvar = yvar
+        self.restrict_sample = restrict_sample
     
+    def forecast(self, season):
+        y, active_players = create_y(season, self.yvar, show_plots=False, relevant_players_only=self.restrict_sample)
         df_l1 = advanced_stats(season-1)
-        df_l2 = advanced_stats(season-2)
         yhat = []
         for i in active_players:
-                try:
-                    most_time = max([df_l1[metric][i], df_l2[metric][i]])
-                    least_time = min([df_l1[metric][i], df_l2[metric][i]])
-                    yhat.append((2*most_time + least_time)/3)
-                except KeyError:
-                    yhat.append(np.nan)
+            try:
+                yhat.append(df_l1[self.yvar][i])
+            except KeyError:
+                yhat.append(np.nan)
 
         return drop_nas(y, yhat)
-
-class Naive:
-    """ Yhat at year t = Y at year t-1 """
-
-    def forecast(season, metric):
-
-        df = advanced_stats(season)
-        active_players = list(df.index.values)
-        y = df[metric].astype(float).tolist()
     
-        df_l1 = advanced_stats(season-1)
-        y_hat = []
+    def cross_val(self, seasons):
+        rmse = []
+        for s in seasons:
+            yval, ypred = self.forecast(s)
+            rmse.append(mean_squared_error(yval, ypred))
+        return rmse
+
+
+class MovingAvgModel:
+    """
+    Forecasts y at year t as a moving average
+    of y at years t-1, t-2... etc.
+    """
+    def __init__(self, yvar: str, lags: int):
+        self.yvar = yvar
+        self.lags = lags
+
+    def forecast(self, season):
+        y, active_players = create_y(season, self.yvar, show_plots=False)
+        df = {}
+        for lag in range(self.lags):
+            df[lag + 1] = advanced_stats(season-lag-1)
+
+        yhat = []
         for i in active_players:
+            xs = []
+            for lag in range(self.lags):
                 try:
-                    y_hat.append(df_l1[metric][i])
+                    xs.append(df[season-lag-1][i])
                 except KeyError:
-                    y_hat.append(np.nan)
+                    xs.append(None)
 
-        return drop_nas(y, y_hat)
+            xs = [x for x in xs if x]
+            avg = sum(xs)/len(xs)
+            yhat.append(avg)
+        return drop_nas(y, yhat)
 
-if __name__ == "__main__":
-
-    import random
-
-    test_year = random.choice(range(2000, 2022))    
-
-    # y, plist = create_y(test_year, 'BPM', show_plots=False)
     
-    xvars1 = [('BPM', 1), ('BPM', 2)]
-    xvars2 = [('VORP', 1), ('VORP', 2), ('VORP', 3)]
-    # x = create_X(test_year, plist, xvars)
-    # print(x)
-
-    model = ForecastModel(2012, 2018, 'VORP', xvars2)
-    y, X = model.create_xy(no_nas=True)
-    print(y, X)
+    def cross_val(self, seasons):
+        rmse = []
+        for s in seasons:
+            yval, ypred = self.forecast(s)
+            rmse.append(mean_squared_error(yval, ypred))
+        return rmse
