@@ -1,3 +1,4 @@
+import os
 import argparse
 import numpy as np
 import pandas as pd
@@ -10,7 +11,15 @@ parser.add_argument('-m', '--metric', type=str, default="BPM", help='Advanced st
 parser.add_argument('-s', '--season', type=int, default=2023, help='Season to be forecasted.\
     Note: 2023 indicates season ending in 2023, i.e. 2022-23.')
 parser.add_argument('-t', '--test', type=str, help='Enable cross validation.')
+parser.add_argument('-b', '--bulk', action="store_true", help='Run all seasons.')
+parser.add_argument('-o', '--outdir', type=str, default = '.', 
+    help='Directory for saving outputs.')
 args = vars(parser.parse_args())
+
+minimum_playing_time=0
+s = args['season']
+m = args['metric']
+xs = [(m, 1), ('MP', 1), ('Age', 1)]
 
 def createXY(start, end):
     """ We need the "No_nas" option for inference"""
@@ -23,25 +32,28 @@ def createXY(start, end):
     y, X, dropped = drop_nas(np.array(y), np.array(X))
     return y, X, plist, dropped
 
-s = args['season']
-m = args["metric"]
-xs = [(m, 1), ('MP', 1), ('Age', 1)]
-minimum_playing_time=0
+def main(s):
+    outfile = os.path.join(args['outdir'], str(s) + '.csv')
+    y, X, _, _ = createXY(1990, s)
+    _, Xp, players, dropidx = createXY(s, s+1)
+    reg = linear_model.LinearRegression()
+    fittedreg = reg.fit(X, y)
+    preds = reg.predict(Xp)
 
-y, X, _, _ = createXY(1990, s)
-_, Xp, players, dropidx = createXY(s, s+1)
-reg = linear_model.LinearRegression()
-fittedreg = reg.fit(X, y)
-preds = reg.predict(Xp)
+    no_pred = []
+    for i in sorted(dropidx, reverse=True):
+        no_pred.append(players[i])
+        del players[i]
 
-no_pred = []
-for i in sorted(dropidx, reverse=True):
-    no_pred.append(players[i])
-    del players[i]
+    predicted = pd.Series(preds, index=players)
+    not_predicted = pd.Series(np.nan, index=no_pred)
+    f = predicted.append(not_predicted).sort_index()
+    print("Predicted: {}, Not: {}".format(len(predicted), len(not_predicted)))
+    print(f)
+    f.to_csv(outfile, header=False)
 
-predicted = pd.Series(preds, index=players)
-not_predicted = pd.Series(np.nan, index=no_pred)
-f = predicted.append(not_predicted).sort_index()
-print("Predicted: {}, Not: {}".format(len(predicted), len(not_predicted)))
-print(f)
-# show forecast in line bar
+if args['bulk']:
+    for i in range(1992, 2023):
+        main(i)
+else:
+    main(args['season'])
